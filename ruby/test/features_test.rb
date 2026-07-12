@@ -100,6 +100,34 @@ class FeaturesTest < Minitest::Test
     assert_equal 1, ctx.audit.count
   end
 
+  def test_sprint_runway_warns_when_no_future_iteration_planned
+    cfg = make_config(features: { sprint_runway: { enabled: true, min_future: 1 } })
+    # Helper iterations start 2026-06-01 (before NOW) → current only, zero future planned.
+    fields = [iteration_field([{ id: "it1", title: "2026-S08" }], [])]
+    ctx = make_ctx(make_graph(fields, []), cfg, FakeClient.new)
+
+    Boardly::Features::SprintRunway.run(ctx)
+
+    assert_equal 1, ctx.audit.count
+  end
+
+  def test_sprint_runway_quiet_when_enough_future_planned
+    cfg = make_config(features: { sprint_runway: { enabled: true, min_future: 1 } })
+    field = Boardly::ProjectField.new(
+      id: "F_sprint", name: "Sprint", data_type: "ITERATION",
+      iterations: [
+        Boardly::IterationInfo.new(id: "it1", title: "2026-S08", start_date: "2026-06-01", duration: 14),
+        Boardly::IterationInfo.new(id: "it2", title: "2026-S09", start_date: "2026-08-01", duration: 14)
+      ],
+      completed_iterations: []
+    )
+    ctx = make_ctx(make_graph([field], []), cfg, FakeClient.new)
+
+    Boardly::Features::SprintRunway.run(ctx)
+
+    assert_equal 0, ctx.audit.count
+  end
+
   def test_auto_assign_maps_labels_and_unions_matches
     cfg = make_config(features: {
       auto_assign: {

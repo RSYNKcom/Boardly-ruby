@@ -63,6 +63,10 @@ module Boardly
           from_statuses: array_of_strings(f.dig(:sprint_start, :from_statuses) || f.dig(:sprintStart, :fromStatuses), default: ["Backlog"], path: "sprintStart.fromStatuses"),
           to_status: (f.dig(:sprint_start, :to_status) || f.dig(:sprintStart, :toStatus) || "Ready").to_s
         },
+        sprint_runway: {
+          enabled: truthy(f.dig(:sprint_runway, :enabled) || f.dig(:sprintRunway, :enabled)),
+          min_future: positive_int(f.dig(:sprint_runway, :min_future) || f.dig(:sprintRunway, :minFuture), default: 1, path: "sprintRunway.minFuture")
+        },
         auto_assign: validate_auto_assign(f[:auto_assign] || f[:autoAssign] || {}),
         stale_nudge: {
           enabled: truthy(f.dig(:stale_nudge, :enabled) || f.dig(:staleNudge, :enabled)),
@@ -168,6 +172,14 @@ module Boardly
     def with_defaults(hash, defaults)
       h = (hash || {})
       defaults.each_with_object({}) { |(k, v), acc| acc[k] = h.fetch(k, v) }
+    end
+
+    def positive_int(v, default:, path:)
+      return default if v.nil?
+      return v if v.is_a?(Integer) && v.positive?
+
+      @errors << "#{path}: must be a positive integer"
+      default
     end
 
     def validate_hex_color(val)
