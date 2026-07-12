@@ -72,6 +72,28 @@ test("stale-nudge with an explicit notify list mentions those logins, not assign
   assert.doesNotMatch(client.comments[0].body, /@alice/);
 });
 
+test("stale-nudge notify list expands an 'assignees' token and dedupes", async () => {
+  const cfg = makeConfig({
+    features: {
+      staleNudge: {
+        enabled: true,
+        rules: [{ status: "Blocked", days: 1, notify: ["assignees", "project-manager", "@alice"] }],
+      },
+    },
+  });
+  const item = makeItem([statusValue("Blocked", "2026-07-01T00:00:00Z")], { number: 5, assignees: ["alice"] });
+  const client = new FakeClient().withComments([]);
+
+  await runStaleNudge(makeCtx(makeGraph([statusField(["Blocked"])], [item]), cfg, client));
+
+  assert.equal(client.comments.length, 1);
+  const body = client.comments[0].body;
+  assert.match(body, /@alice/);
+  assert.match(body, /@project-manager/);
+  // assignee named directly and via the token must collapse to one mention
+  assert.equal(body.match(/@alice/g)?.length, 1);
+});
+
 test("stale-nudge skips draft items and statuses without a matching rule", async () => {
   const cfg = makeConfig({
     features: { staleNudge: { enabled: true, rules: [{ status: "In Progress", days: 1 }] } },

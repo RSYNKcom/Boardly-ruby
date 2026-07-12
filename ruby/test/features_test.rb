@@ -220,6 +220,28 @@ class FeaturesTest < Minitest::Test
     assert_equal 1, body.scan("@alice").length, "assignee should not be mentioned twice"
   end
 
+  def test_stale_nudge_explicit_list_excludes_assignees
+    cfg = make_config(features: { stale_nudge: { enabled: true, rules: [{ status: "In Review", days: 1, notify: ["lead"] }] } })
+    item = make_item([status_value("In Review", "2026-07-01T00:00:00Z")], { number: 5, assignees: ["alice"] })
+    client = FakeClient.new.with_comments([])
+
+    Boardly::Features::StaleNudge.run(make_ctx(make_graph([status_field(["In Review"])], [item]), cfg, client))
+
+    body = client.comments[0][:body]
+    assert_match(/@lead/, body)
+    refute_match(/@alice/, body)
+  end
+
+  def test_resolve_mentions_expansion_and_dedup
+    m = Boardly::Features::StaleNudge
+    assert_equal "@a @b", m.resolve_mentions("assignees", %w[a b])
+    assert_equal "@x", m.resolve_mentions(["x"], %w[a])
+    assert_equal "@a @b @x", m.resolve_mentions(["assignees", "x"], %w[a b])
+    # "@a" (explicit) and "a" (via token) normalize to the same mention
+    assert_equal "@a", m.resolve_mentions(["assignees", "@a"], %w[a])
+    assert_equal "", m.resolve_mentions("assignees", [])
+  end
+
   def test_stale_nudge_skips_when_marker_exists_for_stint
     cfg = make_config(features: { stale_nudge: { enabled: true, rules: [{ status: "In Progress", days: 3, notify: "assignees" }] } })
     stale = make_item([status_value("In Progress", "2026-07-01T00:00:00Z")], { number: 5, assignees: ["alice"] })
