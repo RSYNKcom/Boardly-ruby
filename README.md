@@ -64,7 +64,7 @@ flowchart LR
 | ▶️ | **Sprint start** | When a sprint becomes active, promote cards you pre-parked in it (e.g. **Backlog → Ready**). Only touches cards parked *before* the sprint started, so a deliberate mid-sprint move back is respected. |
 | 👤 | **Auto-assign by label** | A CODEOWNERS-style map from label → owner. Unassigned tickets in a status (e.g. Ready) get the configured assignee — `UI → @zach`, `security → @rajan`. Opt-in; never overrides an existing assignee. |
 | 🛬 | **Sprint runway warning** | GitHub never auto-creates iterations. Boardly warns (job summary + annotation) when too few future sprints are planned, so you add the next one before rollover/sprint-start run dry. |
-| 🔔 | **Stale-card nudges** | @-mention owners when a card sits in a status past a threshold. De-duped so it never spams. |
+| 🔔 | **Stale-card nudges** | @-mention owners — and optionally a reviewer or project manager — when a card sits in a status past a threshold. De-duped so it never spams. |
 | 🧩 | **Sub-issue gating + roll-up** | Block a card from staying **Done** while it has open sub-issues; optionally write completion % into a progress field. |
 | 🏁 | **Sprint digest** | At iteration end, post completed-vs-carried-over counts and velocity. |
 | 🗓️ | **Daily standup** | Post what moved in the last _N_ hours, grouped by assignee. |

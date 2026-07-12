@@ -22,7 +22,7 @@ Feature design and the roadmap are driven in the main project; this Ruby port is
 | Feature | What it does |
 |---------|--------------|
 | Sprint rollover | Move unfinished items into the next iteration when a sprint ends. |
-| Stale-card nudges | @-mention owners when a card sits in a status too long (de-duped). |
+| Stale-card nudges | @-mention owners — and optionally a reviewer or project manager — when a card sits in a status too long (de-duped). |
 | Sub-issue gating + roll-up | Block "Done" while sub-issues are open; write completion % to a field. |
 | Sprint digest | Completed vs carried-over + velocity at iteration end. |
 | Daily standup | What moved in the last N hours, grouped by assignee. |

@@ -22,7 +22,18 @@ features:
       - status: "In Review"
         days: 2
         notify: ["team-lead", "qa-bot"]   # explicit logins instead of assignees
+      - status: "Blocked"
+        days: 1
+        notify: ["assignees", "project-manager"]   # assignees *and* an extra person
 ```
+
+Only statuses that have a rule are watched — a card in a status you didn't list is never nudged. That makes "In Progress" nudges opt-in: drop the rule to stop them, add one to turn them on.
+
+The `notify` target can be:
+
+- `assignees` — @-mention whoever is assigned to the card.
+- a list of logins — e.g. `["team-lead", "qa-bot"]`.
+- a list that **mixes in** `assignees` — e.g. `["assignees", "project-manager"]` pings the card's assignees *and* the extra people (a reviewer, a PM). Duplicates are removed.
 
 Run it on a cadence:
 
@@ -34,7 +45,7 @@ on:
 
 ## What happens
 
-For each rule, any card whose status hasn't changed in more than `days` gets a comment that @-mentions either its assignees or the explicit list you provide. The message supports `{days}`, `{status}`, `{number}`, and `{title}` placeholders.
+For each rule, any card whose status hasn't changed in more than `days` gets a comment that @-mentions the people named in `notify` — its assignees, an explicit list, or both. The message supports `{days}`, `{status}`, `{number}`, and `{title}` placeholders.
 
 **No spam:** each nudge embeds a hidden marker. The card won't be nudged again until its status actually changes, so daily runs won't re-ping the same stale card.
 
