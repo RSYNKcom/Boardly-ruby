@@ -77,6 +77,12 @@ module Boardly
         rest(:post, "/repos/#{owner}/#{repo}/issues/#{issue_number}/labels", { labels: labels })
       end
 
+      # Assign users to an issue/PR. Additive — existing assignees are kept.
+      # GitHub silently ignores logins that can't be assigned (non-collaborators).
+      def add_assignees(owner, repo, issue_number, assignees)
+        rest(:post, "/repos/#{owner}/#{repo}/issues/#{issue_number}/assignees", { assignees: assignees })
+      end
+
       def comment(owner, repo, issue_number, body)
         rest(:post, "/repos/#{owner}/#{repo}/issues/#{issue_number}/comments", { body: body })
       end

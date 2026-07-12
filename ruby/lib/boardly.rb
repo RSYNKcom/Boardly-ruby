@@ -8,6 +8,7 @@ require_relative "boardly/github/client"
 require_relative "boardly/notify/notifier"
 require_relative "boardly/features/rollover"
 require_relative "boardly/features/sprint_start"
+require_relative "boardly/features/auto_assign"
 require_relative "boardly/features/stale_nudge"
 require_relative "boardly/features/sub_issue_gate"
 require_relative "boardly/features/digest"
@@ -19,6 +20,7 @@ module Boardly
   RUNNERS = {
     "rollover" => Features::Rollover,
     "sprint-start" => Features::SprintStart,
+    "auto-assign" => Features::AutoAssign,
     "stale-nudge" => Features::StaleNudge,
     "sub-issue-gate" => Features::SubIssueGate,
     "digest" => Features::Digest,
@@ -31,6 +33,7 @@ module Boardly
     case key
     when "rollover" then cfg.features[:rollover][:enabled]
     when "sprint-start" then cfg.features[:sprint_start][:enabled]
+    when "auto-assign" then cfg.features[:auto_assign][:enabled]
     when "stale-nudge" then cfg.features[:stale_nudge][:enabled]
     when "sub-issue-gate" then cfg.features[:sub_issue_gate][:enabled]
     when "digest" then !(cfg.features[:digest] && cfg.features[:digest][:enabled]).nil? && cfg.features[:digest][:enabled] == true

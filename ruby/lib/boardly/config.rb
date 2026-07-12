@@ -63,6 +63,7 @@ module Boardly
           from_statuses: array_of_strings(f.dig(:sprint_start, :from_statuses) || f.dig(:sprintStart, :fromStatuses), default: ["Backlog"], path: "sprintStart.fromStatuses"),
           to_status: (f.dig(:sprint_start, :to_status) || f.dig(:sprintStart, :toStatus) || "Ready").to_s
         },
+        auto_assign: validate_auto_assign(f[:auto_assign] || f[:autoAssign] || {}),
         stale_nudge: {
           enabled: truthy(f.dig(:stale_nudge, :enabled) || f.dig(:staleNudge, :enabled)),
           rules: validate_rules(f.dig(:stale_nudge, :rules) || f.dig(:staleNudge, :rules) || [])
@@ -81,6 +82,23 @@ module Boardly
         notify = r[:notify] || "assignees"
         notify = notify == "assignees" ? "assignees" : array_of_strings(notify, default: [], path: "staleNudge.rules[#{i}].notify")
         { status: r[:status], days: r[:days], notify: notify, message: r[:message] }
+      end
+    end
+
+    def validate_auto_assign(a)
+      {
+        enabled: truthy(a[:enabled]),
+        only_statuses: array_of_strings(a[:only_statuses] || a[:onlyStatuses], default: ["Ready"], path: "autoAssign.onlyStatuses"),
+        rules: validate_assign_rules(a[:rules] || [])
+      }
+    end
+
+    def validate_assign_rules(rules)
+      Array(rules).map.with_index do |r, i|
+        @errors << "autoAssign.rules[#{i}].label: is required" if blank?(r[:label])
+        assignees = array_of_strings(r[:assignees], default: [], path: "autoAssign.rules[#{i}].assignees")
+        @errors << "autoAssign.rules[#{i}].assignees: needs at least one user" if assignees.empty?
+        { label: r[:label], assignees: assignees }
       end
     end
 

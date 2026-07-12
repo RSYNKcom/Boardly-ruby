@@ -9,7 +9,7 @@ NOW = Time.iso8601("2026-07-09T00:00:00Z")
 # Records every mutating call so tests can assert on them.
 class FakeClient
   attr_reader :positions, :iterations, :single_selects, :numbers, :comments, :created_issues,
-              :ensured_labels, :labels_added
+              :ensured_labels, :labels_added, :assignees_added
 
   def initialize
     @positions = []
@@ -20,6 +20,7 @@ class FakeClient
     @created_issues = []
     @ensured_labels = []
     @labels_added = []
+    @assignees_added = []
     @canned = []
   end
 
@@ -34,6 +35,7 @@ class FakeClient
   def set_number(_p, item_id, _f, value) = @numbers << { item_id: item_id, value: value }
   def ensure_label(_o, _r, name, color) = @ensured_labels << { name: name, color: color }
   def add_labels(_o, _r, number, labels) = @labels_added << { number: number, labels: labels }
+  def add_assignees(_o, _r, number, assignees) = @assignees_added << { number: number, assignees: assignees }
   def comment(_o, _r, number, body) = @comments << { number: number, body: body }
   def list_comments(*) = @canned
   def create_issue(_o, _r, title, _b, _l)

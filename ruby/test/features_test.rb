@@ -100,6 +100,39 @@ class FeaturesTest < Minitest::Test
     assert_equal 1, ctx.audit.count
   end
 
+  def test_auto_assign_maps_labels_and_unions_matches
+    cfg = make_config(features: {
+      auto_assign: {
+        enabled: true, only_statuses: ["Ready"],
+        rules: [{ label: "UI", assignees: ["zach"] }, { label: "security", assignees: ["rajan"] }]
+      }
+    })
+    fields = [status_field(%w[Ready Backlog Done])]
+    ui = make_item([status_value("Ready", NOW.iso8601)], { number: 1, labels: ["UI"] })
+    both = make_item([status_value("Ready", NOW.iso8601)], { number: 2, labels: %w[UI security] })
+    owned = make_item([status_value("Ready", NOW.iso8601)], { number: 3, labels: ["UI"], assignees: ["someone"] })
+    not_ready = make_item([status_value("Backlog", NOW.iso8601)], { number: 4, labels: ["UI"] })
+    unmapped = make_item([status_value("Ready", NOW.iso8601)], { number: 5, labels: ["docs"] })
+    client = FakeClient.new
+
+    Boardly::Features::AutoAssign.run(make_ctx(make_graph(fields, [ui, both, owned, not_ready, unmapped]), cfg, client))
+
+    assert_equal [{ number: 1, assignees: ["zach"] }, { number: 2, assignees: %w[zach rajan] }], client.assignees_added
+  end
+
+  def test_auto_assign_dry_run_records_but_does_not_mutate
+    cfg = make_config(features: {
+      auto_assign: { enabled: true, only_statuses: ["Ready"], rules: [{ label: "UI", assignees: ["zach"] }] }
+    })
+    item = make_item([status_value("Ready", NOW.iso8601)], { number: 1, labels: ["UI"] })
+    ctx = make_ctx(make_graph([status_field(%w[Ready])], [item]), cfg, FakeClient.new, dry_run: true)
+
+    Boardly::Features::AutoAssign.run(ctx)
+
+    assert_equal 0, ctx.client.assignees_added.length
+    assert_equal 1, ctx.audit.count
+  end
+
   def test_stale_nudge_comments_and_mentions_assignees
     cfg = make_config(features: { stale_nudge: { enabled: true, rules: [{ status: "In Progress", days: 3, notify: "assignees" }] } })
     stale = make_item([status_value("In Progress", "2026-07-01T00:00:00Z")], { number: 5, assignees: ["alice"] })
