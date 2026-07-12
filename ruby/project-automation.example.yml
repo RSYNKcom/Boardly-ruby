@@ -30,14 +30,21 @@ features:
   # Nudge owners when a card sits in a column too long.
   staleNudge:
     enabled: true
+    # One rule per status you want watched. A status with no rule is never
+    # nudged, so "In Progress" nudges are purely opt-in — omit the rule to skip.
     rules:
       - status: "In Progress"
         days: 3
-        notify: assignees      # or an explicit list: ["alice", "bob"]
+        notify: assignees      # or a list: ["alice", "bob"], or mix in the assignees
         message: "Heads up — this has been **In Progress** for {days} days. Any blockers?"
       - status: "In Review"
         days: 2
         notify: assignees
+      - status: "Blocked"
+        days: 1
+        # "assignees" expands to the item's assignees; list extra logins alongside
+        # to also ping a reviewer or project manager.
+        notify: ["assignees", "project-manager"]
 
   # Block "Done" while sub-issues remain open, and roll completion % up.
   subIssueGate:
