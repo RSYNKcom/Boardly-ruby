@@ -21,7 +21,7 @@ features:
         message: "Heads up — this has been **In Progress** for {days} days. Any blockers?"
       - status: "In Review"
         days: 2
-        notify: ["team-lead", "qa-bot"]   # explicit logins instead of assignees
+        notify: reviewers                 # the PR's pending review requests
       - status: "Blocked"
         days: 1
         notify: ["assignees", "project-manager"]   # assignees *and* an extra person
@@ -32,8 +32,9 @@ Only statuses that have a rule are watched — a card in a status you didn't lis
 The `notify` target can be:
 
 - `assignees` — @-mention whoever is assigned to the card.
+- `reviewers` — the **pending** review requests on the card's PR (or, for an issue card, the PR that closes it). Once a reviewer submits their review GitHub drops the request, so this targets whoever the card is still waiting on. Falls back to the assignees when no review is pending. Teams are mentioned as `@org/team`.
 - a list of logins — e.g. `["team-lead", "qa-bot"]`.
-- a list that **mixes in** `assignees` — e.g. `["assignees", "project-manager"]` pings the card's assignees *and* the extra people (a reviewer, a PM). Duplicates are removed.
+- a list that **mixes in** the tokens — e.g. `["assignees", "project-manager"]` or `["reviewers", "eng-manager"]` pings the resolved people *and* the extra logins. Duplicates are removed.
 
 Run it on a cadence:
 

@@ -85,7 +85,13 @@ module Boardly
         @errors << "staleNudge.rules[#{i}].status: is required" if blank?(r[:status])
         @errors << "staleNudge.rules[#{i}].days: must be > 0" unless numeric_positive?(r[:days])
         notify = r[:notify] || "assignees"
-        notify = notify == "assignees" ? "assignees" : array_of_strings(notify, default: [], path: "staleNudge.rules[#{i}].notify")
+        # Bare tokens "assignees"/"reviewers" pass through; anything else is a list
+        # (which may itself mix those tokens with explicit logins).
+        notify = if %w[assignees reviewers].include?(notify)
+                   notify
+                 else
+                   array_of_strings(notify, default: [], path: "staleNudge.rules[#{i}].notify")
+                 end
         { status: r[:status], days: r[:days], notify: notify, message: r[:message] }
       end
     end

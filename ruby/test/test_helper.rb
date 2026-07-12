@@ -95,7 +95,8 @@ module Builders
         title: content[:title] || "Item #{content[:number]}",
         url: content[:url] || "https://github.com/acme/repo/issues/#{content[:number]}",
         state: "OPEN", closed_at: nil, updated_at: NOW.iso8601, repo_owner: "acme", repo_name: "repo",
-        assignees: content[:assignees] || [], labels: content[:labels] || [], sub_issues: content[:sub_issues], parent: nil
+        assignees: content[:assignees] || [], labels: content[:labels] || [],
+        reviewers: content[:reviewers] || [], sub_issues: content[:sub_issues], parent: nil
       )
     end
     Boardly::ProjectItem.new(id: "PVTI_#{@seq}", updated_at: NOW.iso8601, field_values: field_values, content: c)

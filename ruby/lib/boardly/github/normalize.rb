@@ -52,6 +52,7 @@ module Boardly
             repo_name: c.dig("repository", "name"),
             assignees: (c.dig("assignees", "nodes") || []).map { |a| a["login"] },
             labels: (c.dig("labels", "nodes") || []).map { |l| l["name"] },
+            reviewers: reviewers(c),
             sub_issues: sub_issues(c["subIssuesSummary"]),
             parent: c["parent"] && ParentRef.new(number: c["parent"]["number"], title: c["parent"]["title"], url: c["parent"]["url"])
           )
@@ -68,6 +69,30 @@ module Boardly
         return nil unless s
 
         SubIssues.new(total: s["total"], completed: s["completed"], percent_completed: s["percentCompleted"])
+      end
+
+      # Pending requested reviewers for a content node: the PR's own
+      # reviewRequests, or (for an issue) those of the PRs that close it.
+      # Deduplicated; empty once every requested reviewer has reviewed.
+      def reviewers(c)
+        request_nodes =
+          if c["__typename"] == "PullRequest"
+            c.dig("reviewRequests", "nodes") || []
+          else
+            (c.dig("closedByPullRequestsReferences", "nodes") || [])
+              .flat_map { |pr| pr.dig("reviewRequests", "nodes") || [] }
+          end
+        request_nodes.filter_map { |n| reviewer_handle(n["requestedReviewer"]) }.uniq
+      end
+
+      # A requestedReviewer union node -> a mentionable handle, or nil.
+      def reviewer_handle(r)
+        return nil unless r
+
+        case r["__typename"]
+        when "User" then r["login"]
+        when "Team" then r["slug"] && "#{r.dig('organization', 'login')}/#{r['slug']}".sub(%r{\A/}, "")
+        end
       end
     end
   end

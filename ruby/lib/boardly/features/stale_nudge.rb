@@ -41,7 +41,7 @@ module Boardly
           already = existing.any? { |c| c[:body].include?(marker(status)) && Time.iso8601(c[:created_at]) >= Time.iso8601(since) }
           next if already
 
-          mentions = resolve_mentions(rule[:notify], content.assignees)
+          mentions = resolve_mentions(rule[:notify], content.assignees, content.reviewers || [])
           template = rule[:message] || "This item has been in **{status}** for {days} day(s) with no status change. Any update?"
           body = "#{marker(status)}\n#{fill(template, status: status, days: age.floor, number: content.number, title: content.title)}"
           body += "\n\n#{mentions}" unless mentions.empty?
@@ -58,12 +58,23 @@ module Boardly
         end
       end
 
-      # `notify` is either the literal "assignees" or a list of logins. Inside the
-      # list, an "assignees" entry expands to the item's assignees, so a rule can
-      # ping assignees *and* extra people (a reviewer, a project manager, …):
-      #   notify: [assignees, project-manager, some-reviewer]
-      def resolve_mentions(notify, assignees)
-        logins = notify == "assignees" ? assignees : notify.flat_map { |l| l == "assignees" ? assignees : l }
+      # `notify` is a bare token ("assignees" or "reviewers") or a list mixing
+      # those tokens with explicit logins. "assignees" expands to the item's
+      # assignees; "reviewers" expands to the card's pending review requests,
+      # falling back to the assignees when none are pending — so a stuck card
+      # never nudges nobody:
+      #   notify: reviewers
+      #   notify: [reviewers, eng-manager]
+      def resolve_mentions(notify, assignees, reviewers = [])
+        expand = lambda do |token|
+          case token
+          when "assignees" then assignees
+          when "reviewers" then reviewers.empty? ? assignees : reviewers
+          else [token]
+          end
+        end
+        tokens = notify.is_a?(Array) ? notify : [notify]
+        logins = tokens.flat_map(&expand)
         logins.map { |l| "@#{l.sub(/\A@/, "")}" }.uniq.join(" ")
       end
 

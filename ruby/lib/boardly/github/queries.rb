@@ -4,6 +4,13 @@ module Boardly
   module GitHub
     # GraphQL documents for reading and mutating Projects (v2).
     module Queries
+      # A requested reviewer is either a User (login) or a Team (org/slug).
+      REVIEWER_FIELDS = <<~GQL
+        __typename
+        ... on User { login }
+        ... on Team { slug organization { login } }
+      GQL
+
       ITEM_FIELDS = <<~GQL
         id
         updatedAt
@@ -26,12 +33,16 @@ module Boardly
             labels(first: 30) { nodes { name } }
             subIssuesSummary { total completed percentCompleted }
             parent { number title url }
+            closedByPullRequestsReferences(first: 5, includeClosedPrs: false) {
+              nodes { reviewRequests(first: 20) { nodes { requestedReviewer { #{REVIEWER_FIELDS} } } } }
+            }
           }
           ... on PullRequest {
             id number title url state merged closedAt updatedAt
             repository { owner { login } name }
             assignees(first: 20) { nodes { login } }
             labels(first: 30) { nodes { name } }
+            reviewRequests(first: 20) { nodes { requestedReviewer { #{REVIEWER_FIELDS} } } }
           }
         }
       GQL

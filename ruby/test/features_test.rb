@@ -242,6 +242,28 @@ class FeaturesTest < Minitest::Test
     assert_equal "", m.resolve_mentions("assignees", [])
   end
 
+  def test_resolve_mentions_reviewers_token_and_fallback
+    m = Boardly::Features::StaleNudge
+    # bare token pings the pending reviewers, not the assignees
+    assert_equal "@carol @acme/platform", m.resolve_mentions("reviewers", %w[alice], %w[carol acme/platform])
+    # falls back to assignees when no review is pending
+    assert_equal "@alice", m.resolve_mentions("reviewers", %w[alice], [])
+    # mixed into a list alongside a fixed escalation contact
+    assert_equal "@carol @eng-manager", m.resolve_mentions(["reviewers", "eng-manager"], %w[alice], %w[carol])
+  end
+
+  def test_stale_nudge_reviewers_token_mentions_pending_reviewers
+    cfg = make_config(features: { stale_nudge: { enabled: true, rules: [{ status: "In Review", days: 2, notify: "reviewers" }] } })
+    stale = make_item([status_value("In Review", "2026-07-01T00:00:00Z")], { number: 9, assignees: ["alice"], reviewers: ["carol"] })
+    client = FakeClient.new.with_comments([])
+
+    Boardly::Features::StaleNudge.run(make_ctx(make_graph([status_field(["In Review"])], [stale]), cfg, client))
+
+    body = client.comments[0][:body]
+    assert_match(/@carol/, body)
+    refute_match(/@alice/, body)
+  end
+
   def test_stale_nudge_skips_when_marker_exists_for_stint
     cfg = make_config(features: { stale_nudge: { enabled: true, rules: [{ status: "In Progress", days: 3, notify: "assignees" }] } })
     stale = make_item([status_value("In Progress", "2026-07-01T00:00:00Z")], { number: 5, assignees: ["alice"] })
